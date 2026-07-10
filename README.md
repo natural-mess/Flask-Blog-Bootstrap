@@ -14,6 +14,8 @@ The app fetches blog posts from a remote JSON API and renders:
 - Static assets served with `url_for('static', ...)`
 - Remote data source using `requests`
 
+![alt text](demo/2026-07-10_19h35_01.gif)
+
 ## Project Structure
 
 ```text
