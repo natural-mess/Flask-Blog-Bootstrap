@@ -1,56 +1,58 @@
 # Flask Blog Bootstrap
 
-A Flask blog app styled with the Start Bootstrap Clean Blog theme.
+A Flask blog application styled with the Start Bootstrap Clean Blog theme. The current version uses SQLite for storage and includes create, read, update, and delete post flows through server-side routes.
 
-The application loads blog posts from a remote JSON API and renders:
-- A home page with post previews
-- A post details page
-- About and Contact pages
-
-The Contact page now supports form submission and sends email through SMTP (Ethereal).
+![Demo](demo/2026-07-10_19h35_01.gif)
 
 ## Features
 
-- Flask routing with a dynamic post page: `/post/<int:num>`
-- Contact form with POST handling at `/contact`
-- SMTP email sending using credentials from environment variables
-- Jinja templates with shared header/footer includes
-- Static assets served from `static/`
-- Remote data fetching using `requests`
+- SQLite-backed blog posts with SQLAlchemy
+- Create, edit, view, and delete post routes
+- Flask-WTF forms with validation
+- Rich text post editing with CKEditor
+- HTML sanitization for post bodies using Bleach
+- Bootstrap 5 integration through `Bootstrap-Flask`
+- Contact form with SMTP email sending through Ethereal credentials
+- Shared Jinja templates for layout and page sections
 
-![Demo](demo/2026-07-10_19h35_01.gif)
+## Tech Stack
+
+- Flask
+- Bootstrap-Flask
+- Flask-SQLAlchemy
+- SQLAlchemy 2
+- Flask-WTF and WTForms
+- Flask-CKEditor
+- Bleach
+- python-dotenv
 
 ## Project Structure
 
 ```text
 Flask-Blog-Bootstrap/
 ├── main.py
+├── requirements.txt
 ├── blog_data.txt
-├── templates/
-│   ├── header.html
-│   ├── footer.html
-│   ├── index.html
-│   ├── about.html
-│   ├── contact.html
-│   └── post.html
+├── demo/
+├── instance/
 ├── static/
 │   ├── assets/
 │   ├── css/
-│   │   └── styles.css
 │   └── js/
-│       └── scripts.js
-└── .env (local, not committed)
+└── templates/
+    ├── about.html
+    ├── contact.html
+    ├── footer.html
+    ├── header.html
+    ├── index.html
+    ├── make-post.html
+    └── post.html
 ```
 
 ## Requirements
 
 - Python 3.10+
 - pip
-
-Python packages:
-- Flask
-- requests
-- python-dotenv
 
 ## Setup
 
@@ -63,14 +65,14 @@ cd Flask-Blog-Bootstrap
 
 ### 2) Create and activate a virtual environment
 
-Windows (PowerShell):
+Windows PowerShell:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-Windows (CMD):
+Windows CMD:
 
 ```bat
 python -m venv .venv
@@ -87,18 +89,24 @@ source .venv/bin/activate
 ### 3) Install dependencies
 
 ```bash
-pip install flask requests python-dotenv
+pip install -r requirements.txt
 ```
 
-### 4) Configure environment variables
+### 4) Configure email environment variables
 
-Add these values to your environment (or to a `.env` file):
+The contact form sends email using these environment variables:
 
 - `ETHEREAL_EMAIL`
 - `ETHEREAL_PASSWORD`
 - `ETHEREAL_HOST`
 
-Example `.env`:
+The current code loads them from:
+
+```text
+D:/API/EnvironmentVariables/.env
+```
+
+Example `.env` contents:
 
 ```env
 ETHEREAL_EMAIL=your_ethereal_email
@@ -106,48 +114,57 @@ ETHEREAL_PASSWORD=your_ethereal_password
 ETHEREAL_HOST=smtp.ethereal.email
 ```
 
-Important:
-- The current code loads env vars using an absolute path:
-  `load_dotenv("D:/API/EnvironmentVariables/.env")`
-- Update this path for your machine, or switch to `load_dotenv()` to load from the project root.
-
 ## Run the App
 
 ```bash
 python main.py
 ```
 
-Open in browser:
-- http://127.0.0.1:5000/
+Open the app at:
+
+- http://127.0.0.1:5003/
+
+The database tables are created automatically on startup. The app is configured to use:
+
+```text
+sqlite:///posts.db
+```
 
 ## Routes
 
-- `GET /` -> Home page with all posts
-- `GET /about` -> About page
-- `GET /contact` -> Contact page form
-- `POST /contact` -> Sends contact message by email and shows success text
-- `GET /post/<int:num>` -> Post details page (example: `/post/1`)
+- `GET /` - List all blog posts
+- `GET /post/<int:post_id>` - View a single post
+- `GET /new-post` - Show the create post form
+- `POST /new-post` - Create a new post
+- `GET /edit-post/<int:post_id>` - Show the edit form for a post
+- `POST /edit-post/<int:post_id>` - Update an existing post
+- `GET /delete-post/<int:post_id>` - Delete a post
+- `GET /about` - About page
+- `GET /contact` - Contact page
+- `POST /contact` - Send a contact email and show a success message
 
-## Notes and Current Behavior
+## Notes
 
-- Blog data source:
-  `https://api.npoint.io/6b78c3badded7def110f`
-- HTTPS requests currently use `verify=False` in `requests.get(...)`.
-  This disables TLS certificate verification and is not recommended for production.
-- Contact messages are currently sent to the configured Ethereal sender mailbox (self-delivery), not to the visitor-provided email.
+- Post content is sanitized before saving to the database.
+- The editor allows formatted content, but only a limited set of safe HTML tags and attributes are preserved.
+- Contact emails are sent through Ethereal SMTP and currently deliver back to the configured sender mailbox.
+- The application currently runs in debug mode on port `5003`.
+- The Flask `SECRET_KEY` is defined directly in `main.py`. For real deployments, move it to an environment variable.
 
 ## Troubleshooting
 
-### Contact form submits but email is not sent
+### `ModuleNotFoundError` or import failures
 
-- Verify `ETHEREAL_EMAIL`, `ETHEREAL_PASSWORD`, and `ETHEREAL_HOST` are set correctly.
-- Confirm the `.env` path in `load_dotenv(...)` exists on your machine.
-- Ensure outbound SMTP on port `587` is allowed.
+Install dependencies again:
 
-### Post page returns 404
+```bash
+pip install -r requirements.txt
+```
 
-- Check the post id in URL.
-- If `/post/<num>` is greater than the available post count, the app returns `Post not found`.
+### Database or post data does not appear
+
+- Start the app once so `db.create_all()` can create the tables.
+- Verify the SQLite database file is being created in the Flask instance path used by your local environment.
 
 ## License
 
