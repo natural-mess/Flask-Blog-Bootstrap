@@ -1,29 +1,25 @@
 # Flask Blog Bootstrap
 
-A Flask blog application styled with the Start Bootstrap Clean Blog theme. The current version uses SQLite for storage and includes create, read, update, and delete post flows through server-side routes.
-
-![Demo](demo/2026-07-10_19h35_01.gif)
+A Flask blog application built with Bootstrap styling, rich-text posts, user authentication, and comments.
 
 ## Features
 
-- SQLite-backed blog posts with SQLAlchemy
-- Create, edit, view, and delete post routes
-- Flask-WTF forms with validation
-- Rich text post editing with CKEditor
-- HTML sanitization for post bodies using Bleach
-- Bootstrap 5 integration through `Bootstrap-Flask`
-- Contact form with SMTP email sending through Ethereal credentials
-- Shared Jinja templates for layout and page sections
+- Blog posts with create, read, update, and delete workflows
+- User registration, login, and logout
+- Password hashing with Werkzeug
+- Rich text editing for posts and comments via CKEditor
+- Comment system tied to authenticated users
+- Admin-only post management (admin is the user with `id == 1`)
+- SQLAlchemy models for posts, users, and comments
 
 ## Tech Stack
 
 - Flask
 - Bootstrap-Flask
-- Flask-SQLAlchemy
-- SQLAlchemy 2
-- Flask-WTF and WTForms
+- Flask-SQLAlchemy / SQLAlchemy 2
+- Flask-Login
+- Flask-WTF / WTForms
 - Flask-CKEditor
-- Bleach
 - python-dotenv
 
 ## Project Structure
@@ -31,22 +27,24 @@ A Flask blog application styled with the Start Bootstrap Clean Blog theme. The c
 ```text
 Flask-Blog-Bootstrap/
 ├── main.py
+├── forms.py
 ├── requirements.txt
 ├── blog_data.txt
-├── demo/
 ├── instance/
 ├── static/
 │   ├── assets/
 │   ├── css/
 │   └── js/
 └── templates/
-    ├── about.html
-    ├── contact.html
-    ├── footer.html
-    ├── header.html
-    ├── index.html
-    ├── make-post.html
-    └── post.html
+        ├── about.html
+        ├── contact.html
+        ├── footer.html
+        ├── header.html
+        ├── index.html
+        ├── login.html
+        ├── make-post.html
+        ├── post.html
+        └── register.html
 ```
 
 ## Requirements
@@ -92,27 +90,21 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4) Configure email environment variables
+### 4) Configure environment variables
 
-The contact form sends email using these environment variables:
+Set at least these values before running the app:
 
-- `ETHEREAL_EMAIL`
-- `ETHEREAL_PASSWORD`
-- `ETHEREAL_HOST`
+- `FLASK_KEY` (required)
+- `DB_URI` (optional, defaults to `sqlite:///posts.db`)
 
-The current code loads them from:
-
-```text
-D:/API/EnvironmentVariables/.env
-```
-
-Example `.env` contents:
+Example:
 
 ```env
-ETHEREAL_EMAIL=your_ethereal_email
-ETHEREAL_PASSWORD=your_ethereal_password
-ETHEREAL_HOST=smtp.ethereal.email
+FLASK_KEY=replace_with_a_long_random_secret
+DB_URI=sqlite:///posts.db
 ```
+
+Note: `main.py` currently calls `load_dotenv("D:/API/EnvironmentVariables/.env")`. If that file does not exist on your machine, define the variables in your shell or update this path.
 
 ## Run the App
 
@@ -120,52 +112,65 @@ ETHEREAL_HOST=smtp.ethereal.email
 python main.py
 ```
 
-Open the app at:
+Default URL:
 
-- http://127.0.0.1:5003/
+- http://127.0.0.1:5000/
 
-The database tables are created automatically on startup. The app is configured to use:
+The app creates database tables automatically on startup with `db.create_all()`.
 
-```text
-sqlite:///posts.db
-```
+## Data Model
+
+- `User`
+    - `id`, `email`, `password`, `name`
+    - one-to-many with `BlogPost`
+    - one-to-many with `Comment`
+- `BlogPost`
+    - `id`, `title`, `subtitle`, `date`, `body`, `img_url`, `author_id`
+    - many-to-one with `User`
+    - one-to-many with `Comment`
+- `Comment`
+    - `id`, `text`, `author_id`, `post_id`
+    - many-to-one with `User`
+    - many-to-one with `BlogPost`
 
 ## Routes
 
-- `GET /` - List all blog posts
-- `GET /post/<int:post_id>` - View a single post
-- `GET /new-post` - Show the create post form
-- `POST /new-post` - Create a new post
-- `GET /edit-post/<int:post_id>` - Show the edit form for a post
-- `POST /edit-post/<int:post_id>` - Update an existing post
-- `GET /delete-post/<int:post_id>` - Delete a post
+- `GET /` - List all posts
+- `GET|POST /register` - Register a new user
+- `GET|POST /login` - Log in
+- `GET /logout` - Log out
+- `GET|POST /post/<int:post_id>` - View a post and submit comments
+- `GET|POST /new-post` - Create a post (admin only)
+- `GET|POST /edit-post/<int:post_id>` - Edit a post (admin only)
+- `GET /delete/<int:post_id>` - Delete a post (admin only)
 - `GET /about` - About page
 - `GET /contact` - Contact page
-- `POST /contact` - Send a contact email and show a success message
 
 ## Notes
 
-- Post content is sanitized before saving to the database.
-- The editor allows formatted content, but only a limited set of safe HTML tags and attributes are preserved.
-- Contact emails are sent through Ethereal SMTP and currently deliver back to the configured sender mailbox.
-- The application currently runs in debug mode on port `5003`.
-- The Flask `SECRET_KEY` is defined directly in `main.py`. For real deployments, move it to an environment variable.
+- Admin access is hard-coded to the first registered user (`current_user.id == 1`).
+- The app currently runs with `debug=False`.
+- `FLASK_KEY` must be set or form/session features may fail.
 
 ## Troubleshooting
 
-### `ModuleNotFoundError` or import failures
+### Import errors
 
-Install dependencies again:
+Reinstall dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Database or post data does not appear
+### App fails on startup with missing secret key behavior
 
-- Start the app once so `db.create_all()` can create the tables.
-- Verify the SQLite database file is being created in the Flask instance path used by your local environment.
+Make sure `FLASK_KEY` is set in your environment.
+
+### Database seems empty
+
+- Confirm `DB_URI` points where you expect.
+- Restart the app to ensure tables are created.
 
 ## License
 
-MIT. See `LICENSE`.
+MIT. See LICENSE.
