@@ -12,11 +12,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from typing import List
 from hashlib import md5
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 import os
 
 # load up the entries as environment variables
-load_dotenv("D:/API/EnvironmentVariables/.env")
+#load_dotenv("D:/API/EnvironmentVariables/.env")
 
 '''
 Make sure the required packages are installed: 
